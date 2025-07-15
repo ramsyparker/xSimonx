@@ -61,6 +61,9 @@ namespace SupanthaPaul
 		private int m_onWallSide = 0;
 		private int m_playerSide = 1;
 
+		private Animator m_animator;
+
+
 
 		void Start()
 		{
@@ -79,6 +82,8 @@ namespace SupanthaPaul
 
 			m_rb = GetComponent<Rigidbody2D>();
 			m_dustParticle = GetComponentInChildren<ParticleSystem>();
+			m_animator = GetComponentInChildren<Animator>();
+
 		}
 
 		private void FixedUpdate()
@@ -88,14 +93,14 @@ namespace SupanthaPaul
 			var position = transform.position;
 			// check if on wall
 			m_onWall = Physics2D.OverlapCircle((Vector2)position + grabRightOffset, grabCheckRadius, whatIsGround)
-			          || Physics2D.OverlapCircle((Vector2)position + grabLeftOffset, grabCheckRadius, whatIsGround);
+					  || Physics2D.OverlapCircle((Vector2)position + grabLeftOffset, grabCheckRadius, whatIsGround);
 			m_onRightWall = Physics2D.OverlapCircle((Vector2)position + grabRightOffset, grabCheckRadius, whatIsGround);
 			m_onLeftWall = Physics2D.OverlapCircle((Vector2)position + grabLeftOffset, grabCheckRadius, whatIsGround);
 
 			// calculate player and wall sides as integers
 			CalculateSides();
 
-			if((m_wallGrabbing || isGrounded) && m_wallJumping)
+			if ((m_wallGrabbing || isGrounded) && m_wallJumping)
 			{
 				m_wallJumping = false;
 			}
@@ -103,15 +108,15 @@ namespace SupanthaPaul
 			if (isCurrentlyPlayable)
 			{
 				// horizontal movement
-				if(m_wallJumping)
+				if (m_wallJumping)
 				{
 					m_rb.velocity = Vector2.Lerp(m_rb.velocity, (new Vector2(moveInput * speed, m_rb.velocity.y)), 1.5f * Time.fixedDeltaTime);
 				}
 				else
 				{
-					if(canMove && !m_wallGrabbing)
+					if (canMove && !m_wallGrabbing)
 						m_rb.velocity = new Vector2(moveInput * speed, m_rb.velocity.y);
-					else if(!canMove)
+					else if (!canMove)
 						m_rb.velocity = new Vector2(0f, m_rb.velocity.y);
 				}
 				// better jump physics
@@ -139,7 +144,7 @@ namespace SupanthaPaul
 					else
 					{
 						m_dashTime -= Time.deltaTime;
-						if(m_facingRight)
+						if (m_facingRight)
 							m_rb.velocity = Vector2.right * dashSpeed;
 						else
 							m_rb.velocity = Vector2.left * dashSpeed;
@@ -147,13 +152,14 @@ namespace SupanthaPaul
 				}
 
 				// wall grab
-				if(m_onWall && !isGrounded && m_rb.velocity.y <= 0f && m_playerSide == m_onWallSide)
+				if (m_onWall && !isGrounded && m_rb.velocity.y <= 0f && m_playerSide == m_onWallSide)
 				{
 					actuallyWallGrabbing = true;    // for animation
 					m_wallGrabbing = true;
 					m_rb.velocity = new Vector2(moveInput * speed, -slideSpeed);
 					m_wallStick = m_wallStickTime;
-				} else
+				}
+				else
 				{
 					m_wallStick -= Time.deltaTime;
 					actuallyWallGrabbing = false;
@@ -165,11 +171,11 @@ namespace SupanthaPaul
 
 				// enable/disable dust particles
 				float playerVelocityMag = m_rb.velocity.sqrMagnitude;
-				if(m_dustParticle.isPlaying && playerVelocityMag == 0f)
+				if (m_dustParticle.isPlaying && playerVelocityMag == 0f)
 				{
 					m_dustParticle.Stop();
 				}
-				else if(!m_dustParticle.isPlaying && playerVelocityMag > 0f)
+				else if (!m_dustParticle.isPlaying && playerVelocityMag > 0f)
 				{
 					m_dustParticle.Play();
 				}
@@ -203,7 +209,7 @@ namespace SupanthaPaul
 					// dash effect
 					PoolManager.instance.ReuseObject(dashEffect, transform.position, Quaternion.identity);
 					// if player in air while dashing
-					if(!isGrounded)
+					if (!isGrounded)
 					{
 						m_hasDashedInAir = true;
 					}
@@ -211,26 +217,26 @@ namespace SupanthaPaul
 				}
 			}
 			m_dashCooldown -= Time.deltaTime;
-			
+
 			// if has dashed in air once but now grounded
 			if (m_hasDashedInAir && isGrounded)
 				m_hasDashedInAir = false;
-			
+
 			// Jumping
-			if(InputSystem.Jump() && m_extraJumps > 0 && !isGrounded && !m_wallGrabbing)	// extra jumping
+			if (InputSystem.Jump() && m_extraJumps > 0 && !isGrounded && !m_wallGrabbing)   // extra jumping
 			{
 				m_rb.velocity = new Vector2(m_rb.velocity.x, m_extraJumpForce); ;
 				m_extraJumps--;
 				// jumpEffect
 				PoolManager.instance.ReuseObject(jumpEffect, groundCheck.position, Quaternion.identity);
 			}
-			else if(InputSystem.Jump() && (isGrounded || m_groundedRemember > 0f))	// normal single jumping
+			else if (InputSystem.Jump() && (isGrounded || m_groundedRemember > 0f)) // normal single jumping
 			{
 				m_rb.velocity = new Vector2(m_rb.velocity.x, jumpForce);
 				// jumpEffect
 				PoolManager.instance.ReuseObject(jumpEffect, groundCheck.position, Quaternion.identity);
 			}
-			else if(InputSystem.Jump() && m_wallGrabbing && moveInput!=m_onWallSide )		// wall jumping off the wall
+			else if (InputSystem.Jump() && m_wallGrabbing && moveInput != m_onWallSide)     // wall jumping off the wall
 			{
 				m_wallGrabbing = false;
 				m_wallJumping = true;
@@ -239,7 +245,7 @@ namespace SupanthaPaul
 					Flip();
 				m_rb.AddForce(new Vector2(-m_onWallSide * wallJumpForce.x, wallJumpForce.y), ForceMode2D.Impulse);
 			}
-			else if(InputSystem.Jump() && m_wallGrabbing && moveInput != 0 && (moveInput == m_onWallSide))      // wall climbing jump
+			else if (InputSystem.Jump() && m_wallGrabbing && moveInput != 0 && (moveInput == m_onWallSide))      // wall climbing jump
 			{
 				m_wallGrabbing = false;
 				m_wallJumping = true;
@@ -248,6 +254,11 @@ namespace SupanthaPaul
 					Flip();
 				m_rb.AddForce(new Vector2(-m_onWallSide * wallClimbForce.x, wallClimbForce.y), ForceMode2D.Impulse);
 			}
+			if (InputSystem.Melee()) // Anggap kamu punya fungsi input untuk melee
+			{
+				m_animator.SetTrigger("Melee");
+			}
+
 
 		}
 
